@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig(filename='instagram_downloader.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-from src import constant
+import constant
 
 
 def get_image(id: str) -> str:

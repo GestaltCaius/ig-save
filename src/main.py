@@ -1,5 +1,5 @@
 from flask import Flask
-from src import igdl
+import igdl
 
 app = Flask(__name__)
 
@@ -10,4 +10,4 @@ def get_photo(id: str) -> str:
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0')
