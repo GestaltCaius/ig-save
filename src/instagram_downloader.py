@@ -1,7 +1,6 @@
 import mechanicalsoup
 import logging
 
-logging.basicConfig(filename='instagram_downloader.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import constant
 
