@@ -9,7 +9,8 @@ from typing import List
 
 import constant
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+#from selenium.webdriver.chrome.options import Options
 from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 
@@ -27,9 +28,26 @@ def get_image(id: str) -> str:
 
 def get_images(username: str) -> List[str]:
     ''' get images from instagram profile '''
-    options = Options()
-    options.headless = True
-    browser = webdriver.Chrome(options=options)
+    # options = Options()
+    # options.headless = True
+    # options.add_argument('--disable-extensions')
+    # options.add_argument('--headless')
+    # options.add_argument('--disable-gpu')
+    # options.add_argument('--no-sandbox')
+    # options.add_experimental_option(
+    #     'prefs', {
+    #         'download.default_directory': '/tmp',
+    #         'download.prompt_for_download': False,
+    #         'download.directory_upgrade': True,
+    #         'safebrowsing.enabled': True
+    #     }
+    # )
+    browser = webdriver.Remote(
+        command_executor='http://phantomjs:8910',
+        desired_capabilities=DesiredCapabilities.PHANTOMJS
+        )
+
+    #browser = webdriver.Chrome(options=options)
     browser.get(f'http://instagram.com/{username}')
     scroll = lambda : browser.execute_script("window.scrollTo(0, document.body.scrollHeight);var page_height=document.body.scrollHeight;return page_height;")
     page_height = scroll()
