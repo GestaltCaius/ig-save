@@ -4,9 +4,11 @@ import logging
 import os
 from pathlib import Path
 
-from flask import Flask
+from typing import List
+from flask import Flask, jsonify
 
 import instagram_downloader as igdl
+
 
 app = Flask(__name__)
 
@@ -17,15 +19,20 @@ def setup_log() -> None:
         level=logging.DEBUG,
         format='%(message)s',
         filename=filepath,
-        filemode='w' #clear everytime
+        filemode='w'
     )
 
 
 @app.route('/api/photos/<string:id>')
 def get_photo(id: str) -> str:
-    return igdl.get_image(id)
+    return jsonify(igdl.get_image(id))
+
+
+@app.route('/api/profile/<string:username>')
+def get_profile_photos(username: str) -> List[str]:
+    return jsonify(igdl.get_images(username))
 
 
 if __name__ == "__main__":
     setup_log()
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)
