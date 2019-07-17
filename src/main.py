@@ -9,15 +9,15 @@ from flask import Flask, jsonify
 
 import instagram_downloader as igdl
 
-
 app = Flask(__name__)
+
 
 def setup_log() -> None:
     ''' Setup project logger '''
-    filepath = os.path.join(Path.cwd(), 'osint_result.log')
+    filepath = os.path.join(Path.cwd(), 'igdl.log')
     logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(message)s',
+        level=logging.INFO,
+        format='[%(asctime)-15s][%(clientip)s][%(user)-8s] %(message)s',
         filename=filepath,
         filemode='w'
     )

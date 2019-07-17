@@ -1,18 +1,24 @@
 import logging
 import time
-
+from dataclasses import dataclass, asdict
 
 from collections import OrderedDict
 import mechanicalsoup
 from bs4 import BeautifulSoup
-from typing import List
+from typing import List, Dict
 
 import constant
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-#from selenium.webdriver.chrome.options import Options
 from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor as PoolExecutor
+import concurrent.futures
+
+@dataclass(frozen=True, eq=True)
+class InstagramImage:
+    url: str # Link to instagram photo page
+    preview: str # Image preview link (small size)
 
 
 def get_image(id: str) -> str:
@@ -28,58 +34,44 @@ def get_image(id: str) -> str:
 
 def get_images(username: str) -> List[str]:
     ''' get images from instagram profile '''
-    # options = Options()
-    # options.headless = True
-    # options.add_argument('--disable-extensions')
-    # options.add_argument('--headless')
-    # options.add_argument('--disable-gpu')
-    # options.add_argument('--no-sandbox')
-    # options.add_experimental_option(
-    #     'prefs', {
-    #         'download.default_directory': '/tmp',
-    #         'download.prompt_for_download': False,
-    #         'download.directory_upgrade': True,
-    #         'safebrowsing.enabled': True
-    #     }
-    # )
-    browser = webdriver.Remote(
-        command_executor='http://phantomjs:8910',
-        desired_capabilities=DesiredCapabilities.PHANTOMJS
-        )
 
-    #browser = webdriver.Chrome(options=options)
-    browser.get(f'http://instagram.com/{username}')
+
+    options = Options()
+    options.headless = True
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    browser = webdriver.Chrome(chrome_options=options)
+    # browser = webdriver.PhantomJS()
+    browser.get(f'https://instagram.com/{username}')
     scroll = lambda : browser.execute_script("window.scrollTo(0, document.body.scrollHeight);var page_height=document.body.scrollHeight;return page_height;")
     page_height = scroll()
     scrolled_to_end = False
     results = []
     while not scrolled_to_end:
-        current_page_height = page_height 
-        time.sleep(1)
+        current_page_height = page_height
         html = browser.page_source
         results += scrape_images_from_html(html)
+        time.sleep(1)
         page_height = scroll()
         scrolled_to_end = current_page_height == page_height
-    html = browser.page_source
-    results += scrape_images_from_html(html)
-    results = list(OrderedDict.fromkeys(results))
+    # results = list(OrderedDict.fromkeys(results))
     
-    start = time.time()
-    with PoolExecutor(max_workers=30) as executor:
-        futures = executor.map(lambda x : get_image(x), results)
-        results = []
-        for result in futures:
-            results.append(result)
-    end = time.time()
-    print(f'pool = {end - start}')
     return results
     
+def parse_instagram_image(div) -> Dict:
+    a = div.find('a')['href'][3:-1]
+    img = div.find('img', {'class': 'FFVAD'})['src']
+    return InstagramImage(url=a, preview=img).__dict__
 
 def scrape_images_from_html(html: str) -> List[str]:
     ''' Get instagram profile's pictures from html '''
-    results = []
     soup = BeautifulSoup(html, "html.parser")
-    for div in soup.find_all('div', {'class': 'v1Nh3'}):
-        a = div.find('a')
-        results.append(f"{a['href'][3:-1]}")
+    divs = soup.find_all('div', {'class': 'v1Nh3'})
+    with PoolExecutor() as executor:
+        futures = executor.map(parse_instagram_image, divs)
+        results = [result for result in futures]
+        # results = []
+        # for result in futures:
+        #     results.append(result)
     return results
